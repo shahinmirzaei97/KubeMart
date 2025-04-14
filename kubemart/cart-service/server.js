@@ -31,6 +31,34 @@ app.post('/cart', (req, res) => {
   res.status(201).json({ message: "Item added to cart", cart });
 });
 
+app.patch('/cart/:id', (req, res) => {
+  const itemId = parseInt(req.params.id);
+  const action = req.body.action;
+
+  const itemIndex = cart.findIndex(item => item.id === itemId);
+  if (itemIndex === -1) {
+    return res.status(404).json({ error: "Item not found in cart" });
+  }
+
+  if (action === 'increase') {
+    cart[itemIndex].quantity += 1;
+    return res.json({ message: "Item quantity increased", cart });
+  }
+
+  if (action === 'decrease') {
+    if (cart[itemIndex].quantity > 1) {
+      cart[itemIndex].quantity -= 1;
+      return res.json({ message: "Item quantity decreased", cart });
+    } else {
+      cart.splice(itemIndex, 1);
+      return res.json({ message: "Item removed from cart", cart });
+    }
+  }
+
+  return res.status(400).json({ error: "Invalid action" });
+});
+
+
 // Remove item from cart
 app.delete('/cart/:id', (req, res) => {
   const itemId = parseInt(req.params.id);

@@ -18,3 +18,4 @@ app.get('/products', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Product service running on port ${PORT}`);
 });
+
