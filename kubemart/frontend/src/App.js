@@ -121,35 +121,33 @@ function App() {
       {items.length === 0 ? (
         <p>No results found.</p>
       ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {items.map(product => (
-            <li key={product.id} style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center' }}>
-              <img 
-                src={product.image} 
-                alt={product.name} 
-                style={{ width: '80px', height: '80px', objectFit: 'cover', marginRight: '1rem', borderRadius: '8px' }} 
-              />
-              <div>
-                <strong>{product.name}</strong> — ${product.price}
-                <br />
-                <small style={{ color: '#666' }}>{product.category}</small>
-                <br />
-                <button 
-                  style={{ marginTop: '0.5rem' }}
-                  onClick={() => handleAddToCart(product)}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+  {items.map(product => (
+    <li key={product.id} className="bg-gray-50 p-4 rounded shadow hover:shadow-lg transition">
+      <img
+        src={product.image}
+        alt={product.name}
+        className="w-full h-40 object-contain rounded mb-2"
+      />
+      <h3 className="font-semibold text-lg">{product.name}</h3>
+      <p className="text-sm text-gray-500">{product.category}</p>
+      <p className="text-green-600 font-bold mb-2">${product.price}</p>
+      <button
+        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+        onClick={() => handleAddToCart(product)}
+      >
+        Add to Cart
+      </button>
+    </li>
+  ))}
+</ul>
+
       )}
     </>
   );
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div className="p-6 max-w-screen-xl mx-auto bg-white min-h-screen text-gray-800">
       <h1>KubeMart 🛍️</h1>
       {message && (
   <div style={{
@@ -167,18 +165,14 @@ function App() {
   </div>
 )}
 
-      <input
-        type="text"
-        placeholder="Search for products..."
-        value={searchTerm}
-        onChange={handleSearch}
-        style={{
-          padding: "0.5rem",
-          marginBottom: "2rem",
-          width: "100%",
-          fontSize: "1rem"
-        }}
-      />
+<input
+  type="text"
+  placeholder="Search for products..."
+  value={searchTerm}
+  onChange={handleSearch}
+  className="w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
+/>
+
 
       {searchTerm && searchResults.length > 0 ? (
         renderProductList("🔍 Search Results", searchResults)
