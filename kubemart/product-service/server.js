@@ -5,15 +5,40 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
-const products = [
-  { id: 1, name: "Vintage Sneakers", price: 59.99, category: "Footwear", image: "https://via.placeholder.com/150" },
-  { id: 2, name: "Classic T-Shirt", price: 29.99, category: "Apparel", image: "https://via.placeholder.com/150" },
-  { id: 3, name: "Leather Wallet", price: 39.99, category: "Accessories", image: "https://via.placeholder.com/150" }
-];
+app.get('/products', async (req, res) => {
+  try {
+    const response = await fetch('https://dummyjson.com/products?limit=100');
+    const data = await response.json();
 
-app.get('/products', (req, res) => {
-  res.json(products);
+    const products = Array.isArray(data.products) ? data.products : [];
+
+    const simplify = (p) => ({
+      id: p.id,
+      name: p.title,
+      price: p.price,
+      category: p.category,
+      image: p.thumbnail,
+      discount: p.discountPercentage,
+      stock: p.stock
+    });
+
+    const bestSellers = products.filter(p => p.stock > 80).map(simplify);
+    const onSale = products.filter(p => p.discountPercentage > 20).map(simplify);
+    const all = products.map(simplify);
+
+    res.json({
+      bestSellers,
+      onSale,
+      all
+    });
+  } catch (err) {
+    console.error("Failed to fetch products:", err);
+    res.status(500).json({ error: "Could not load products" });
+  }
 });
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Product service running on port ${PORT}`);

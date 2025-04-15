@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from 'react';
 
 function App() {
-  const [products, setProducts] = useState([]);
+  const [sections, setSections] = useState({
+    bestSellers: [],
+    onSale: [],
+    all: []
+  });
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState([]);
   const [message, setMessage] = useState("");
 
-  // Fetch products
+  // Fetch homepage product sections
   useEffect(() => {
     fetch(`${process.env.REACT_APP_PRODUCT_API}/products`)
       .then(res => res.json())
-      .then(data => setProducts(data))
+      .then(data => setSections(data))
       .catch(err => console.error("Failed to load products:", err));
   }, []);
 
   // Fetch cart items
+  useEffect(() => {
+    loadCart();
+  }, []);
+
   const loadCart = () => {
     fetch(`${process.env.REACT_APP_CART_API}/cart`)
       .then(res => res.json())
@@ -21,9 +31,33 @@ function App() {
       .catch(err => console.error("Failed to load cart:", err));
   };
 
-  useEffect(() => {
-    loadCart();
-  }, []);
+  // Search products
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+
+    fetch(`https://dummyjson.com/products/search?q=${value}`)
+      .then(res => res.json())
+      .then(data => {
+        const simplified = data.products.map(p => ({
+          id: p.id,
+          name: p.title,
+          price: p.price,
+          category: p.category,
+          image: p.thumbnail
+        }));
+        setSearchResults(simplified);
+      })
+      .catch(err => {
+        console.error("Search failed:", err);
+        setSearchResults([]);
+      });
+  };
 
   const handleAddToCart = (product) => {
     fetch(`${process.env.REACT_APP_CART_API}/cart`, {
@@ -34,7 +68,7 @@ function App() {
       .then(res => res.json())
       .then(() => {
         setMessage(`🛒 Added ${product.name} to cart!`);
-        loadCart(); // Refresh cart
+        loadCart();
         setTimeout(() => setMessage(""), 3000);
       })
       .catch(err => console.error("Failed to add to cart:", err));
@@ -48,7 +82,7 @@ function App() {
     })
       .then(res => res.json())
       .then(data => {
-        setCart(data.cart); // update cart state immediately
+        setCart(data.cart);
         setMessage(`${action === 'increase' ? '➕' : '➖'} Item ${action}d`);
         setTimeout(() => setMessage(""), 3000);
       })
@@ -81,30 +115,82 @@ function App() {
       .catch(err => console.error("Failed to clear cart:", err));
   };
 
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h1>KubeMart 🛍️</h1>
-      {message && <p style={{ color: "green" }}>{message}</p>}
-
-      <h2>🛍️ Products</h2>
-      {products.length === 0 ? (
-        <p>Loading products from the cloud... (may take a few seconds)</p>
+  const renderProductList = (title, items) => (
+    <>
+      <h2>{title}</h2>
+      {items.length === 0 ? (
+        <p>No results found.</p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
-          {products.map(product => (
-            <li key={product.id} style={{ marginBottom: '1rem' }}>
-              <strong>{product.name}</strong> — ${product.price}
-              <button 
-                style={{ marginLeft: "1rem" }}
-                onClick={() => handleAddToCart(product)}
-              >
-                Add to Cart
-              </button>
+          {items.map(product => (
+            <li key={product.id} style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center' }}>
+              <img 
+                src={product.image} 
+                alt={product.name} 
+                style={{ width: '80px', height: '80px', objectFit: 'cover', marginRight: '1rem', borderRadius: '8px' }} 
+              />
+              <div>
+                <strong>{product.name}</strong> — ${product.price}
+                <br />
+                <small style={{ color: '#666' }}>{product.category}</small>
+                <br />
+                <button 
+                  style={{ marginTop: '0.5rem' }}
+                  onClick={() => handleAddToCart(product)}
+                >
+                  Add to Cart
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
+    </>
+  );
 
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>KubeMart 🛍️</h1>
+      {message && (
+  <div style={{
+    position: "fixed",
+    top: "1rem",
+    right: "1rem",
+    backgroundColor: "#38a169",
+    color: "white",
+    padding: "0.75rem 1rem",
+    borderRadius: "0.5rem",
+    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+    zIndex: 9999
+  }}>
+    {message}
+  </div>
+)}
+
+      <input
+        type="text"
+        placeholder="Search for products..."
+        value={searchTerm}
+        onChange={handleSearch}
+        style={{
+          padding: "0.5rem",
+          marginBottom: "2rem",
+          width: "100%",
+          fontSize: "1rem"
+        }}
+      />
+
+      {searchTerm && searchResults.length > 0 ? (
+        renderProductList("🔍 Search Results", searchResults)
+      ) : (
+        <>
+          {renderProductList("🏆 Best Sellers", sections.bestSellers)}
+          {renderProductList("🔖 On Sale", sections.onSale)}
+          {renderProductList("📦 All Products", sections.all)}
+        </>
+      )}
+
+      {/* Cart (will become a drawer in next phase) */}
       <h2>🛒 Cart</h2>
       {cart.length === 0 ? (
         <p>Your cart is empty.</p>
