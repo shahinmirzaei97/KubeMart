@@ -105,8 +105,18 @@ function App() {
   const scrollHorizontally = (sectionTitle, dir) => {
     const ref = scrollRefs[sectionTitle];
     if (ref && ref.current) {
-      const scrollAmount = 300;
-      ref.current.scrollBy({ left: dir === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+      const scrollAmount = 600;
+      const el = ref.current;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 5;
+      const atStart = el.scrollLeft <= 5;
+
+      if (dir === 'right' && atEnd) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else if (dir === 'left' && atStart) {
+        el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+      } else {
+        el.scrollBy({ left: dir === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+      }
     }
   };
 
@@ -117,17 +127,19 @@ function App() {
         <span>{title}</span>
         <Button variant="outline-secondary" size="sm" onClick={() => scrollHorizontally(title, 'right')}>▶</Button>
       </h2>
-      <div className="d-flex overflow-auto" ref={scrollRefs[title]}>
+      <div className="d-flex overflow-auto gap-3" ref={scrollRefs[title]} style={{ paddingBottom: '1rem' }}>
         {items.map((product, index) => (
           <Card
             key={product.id}
-            className={`me-3 flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'}`}
-            style={{ width: '220px' }}
+            className={`flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'} border-0`}
+            style={{ width: '220px', transition: 'transform 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)' }
           >
             <Card.Img
               variant="top"
               src={product.image}
-              style={{ height: '150px', objectFit: 'contain', padding: '1rem' }}
+              style={{ height: '130px', objectFit: 'contain', padding: '1rem' }}
             />
             <Card.Body>
               <Card.Title style={{ fontSize: '1rem' }}>{product.name}</Card.Title>
