@@ -23,7 +23,7 @@ app.get('/products', async (req, res) => {
     });
 
     const bestSellers = products.filter(p => p.stock > 80).map(simplify);
-    const onSale = products.filter(p => p.discountPercentage > 20).map(simplify);
+    const onSale = products.filter(p => p.discountPercentage > 5).map(simplify);
     const all = products.map(simplify);
 
     res.json({

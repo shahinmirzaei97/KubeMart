@@ -1,16 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Container, Navbar, Form, FormControl, Button, Dropdown, ListGroup, Badge, Row, Col, Card } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './App.css';
 
 function App() {
-  const [sections, setSections] = useState({
-    bestSellers: [],
-    onSale: [],
-    all: []
-  });
+  const [sections, setSections] = useState({ bestSellers: [], onSale: [], all: [] });
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState([]);
   const [message, setMessage] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const scrollRefs = {
+    "🏆 Best Sellers": useRef(null),
+    "🔖 On Sale": useRef(null),
+    "📦 All Products": useRef(null),
+    "🔍 Search Results": useRef(null)
+  };
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_PRODUCT_API}/products`)
@@ -19,9 +25,7 @@ function App() {
       .catch(err => console.error("Failed to load products:", err));
   }, []);
 
-  useEffect(() => {
-    loadCart();
-  }, []);
+  useEffect(() => { loadCart(); }, []);
 
   const loadCart = () => {
     fetch(`${process.env.REACT_APP_CART_API}/cart`)
@@ -33,11 +37,7 @@ function App() {
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-
-    if (value.trim() === "") {
-      setSearchResults([]);
-      return;
-    }
+    if (value.trim() === "") return setSearchResults([]);
 
     fetch(`https://dummyjson.com/products/search?q=${value}`)
       .then(res => res.json())
@@ -51,10 +51,7 @@ function App() {
         }));
         setSearchResults(simplified);
       })
-      .catch(err => {
-        console.error("Search failed:", err);
-        setSearchResults([]);
-      });
+      .catch(() => setSearchResults([]));
   };
 
   const handleAddToCart = (product) => {
@@ -68,8 +65,7 @@ function App() {
         setMessage(`🛒 Added ${product.name} to cart!`);
         loadCart();
         setTimeout(() => setMessage(""), 3000);
-      })
-      .catch(err => console.error("Failed to add to cart:", err));
+      });
   };
 
   const updateCartItem = (id, action) => {
@@ -83,144 +79,138 @@ function App() {
         setCart(data.cart);
         setMessage(`${action === 'increase' ? '➕' : '➖'} Item ${action}d`);
         setTimeout(() => setMessage(""), 3000);
-      })
-      .catch(err => console.error(`Failed to ${action} item:`, err));
+      });
   };
 
   const handleRemoveCompletely = (id) => {
-    fetch(`${process.env.REACT_APP_CART_API}/cart/${id}`, {
-      method: "DELETE"
-    })
+    fetch(`${process.env.REACT_APP_CART_API}/cart/${id}`, { method: "DELETE" })
       .then(res => res.json())
       .then(data => {
         setCart(data.cart);
         setMessage("🗑️ Item removed from cart.");
         setTimeout(() => setMessage(""), 3000);
-      })
-      .catch(err => console.error("Failed to remove item:", err));
+      });
   };
 
   const handleClearCart = () => {
-    fetch(`${process.env.REACT_APP_CART_API}/cart`, {
-      method: "DELETE"
-    })
+    fetch(`${process.env.REACT_APP_CART_API}/cart`, { method: "DELETE" })
       .then(res => res.json())
       .then(() => {
         setMessage("❌ Cart cleared.");
         loadCart();
         setTimeout(() => setMessage(""), 3000);
-      })
-      .catch(err => console.error("Failed to clear cart:", err));
+      });
+  };
+
+  const scrollHorizontally = (sectionTitle, dir) => {
+    const ref = scrollRefs[sectionTitle];
+    if (ref && ref.current) {
+      const scrollAmount = 300;
+      ref.current.scrollBy({ left: dir === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
   };
 
   const renderProductList = (title, items) => (
-    <>
-      <h2>{title}</h2>
-      {items.length === 0 ? (
-        <p>No results found.</p>
-      ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {items.map(product => (
-            <li key={product.id} className="bg-gray-50 p-4 rounded shadow hover:shadow-lg transition">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-40 object-contain rounded mb-2"
-              />
-              <h3 className="font-semibold text-lg">{product.name}</h3>
-              <p className="text-sm text-gray-500">{product.category}</p>
-              <p className="text-green-600 font-bold mb-2">${product.price}</p>
-              <button
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => handleAddToCart(product)}
-              >
+    <div className="mb-5">
+      <h2 className="mb-3 d-flex justify-content-between align-items-center">
+        <Button variant="outline-secondary" size="sm" onClick={() => scrollHorizontally(title, 'left')}>◀</Button>
+        <span>{title}</span>
+        <Button variant="outline-secondary" size="sm" onClick={() => scrollHorizontally(title, 'right')}>▶</Button>
+      </h2>
+      <div className="d-flex overflow-auto" ref={scrollRefs[title]}>
+        {items.map((product, index) => (
+          <Card
+            key={product.id}
+            className={`me-3 flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'}`}
+            style={{ width: '220px' }}
+          >
+            <Card.Img
+              variant="top"
+              src={product.image}
+              style={{ height: '150px', objectFit: 'contain', padding: '1rem' }}
+            />
+            <Card.Body>
+              <Card.Title style={{ fontSize: '1rem' }}>{product.name}</Card.Title>
+              <Card.Text>
+                <small className="text-muted">{product.category}</small><br />
+                <strong>${product.price}</strong>
+              </Card.Text>
+              <Button variant="primary" size="sm" onClick={() => handleAddToCart(product)}>
                 Add to Cart
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+              </Button>
+            </Card.Body>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto bg-white min-h-screen text-gray-800">
-      <h1>KubeMart 🛍️</h1>
+    <Container className="py-4">
       {message && (
-        <div style={{
-          position: "fixed",
-          top: "1rem",
-          right: "1rem",
-          backgroundColor: "#38a169",
-          color: "white",
-          padding: "0.75rem 1rem",
-          borderRadius: "0.5rem",
-          boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-          zIndex: 9999
-        }}>
+        <div className="alert alert-success position-fixed bottom-0 end-0 mb-3 me-3" style={{ zIndex: 1050 }}>
           {message}
         </div>
       )}
 
-      <nav className="relative flex justify-between items-center bg-white px-6 py-4 shadow-md sticky top-0 z-50">
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={handleSearch}
-          className="w-full max-w-md px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-
-        <div className="relative">
-          <button
-            onClick={() => setDrawerOpen(!drawerOpen)}
-            className="ml-4 flex items-center gap-2 text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700"
-          >
-            🛒 Cart ({cart.length})
-          </button>
-
-          {drawerOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 shadow-lg rounded-md z-50 p-4">
+      <Navbar bg="light" expand="lg" className="mb-4">
+        <Container>
+          <Navbar.Brand>KubeMart 🛍️</Navbar.Brand>
+          <Form className="d-flex w-50">
+            <FormControl
+              type="search"
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="me-2"
+            />
+          </Form>
+          <Dropdown show={drawerOpen} onToggle={() => setDrawerOpen(!drawerOpen)}>
+            <Dropdown.Toggle variant="primary">
+              🛒 Cart <Badge bg="light" text="dark">{cart.length}</Badge>
+            </Dropdown.Toggle>
+            <Dropdown.Menu align="end" style={{ minWidth: '22rem' }} className="p-3 shadow-lg border-0">
               {cart.length === 0 ? (
-                <p>Your cart is empty.</p>
+                <Dropdown.ItemText>Your cart is empty.</Dropdown.ItemText>
               ) : (
                 <>
-                  <ul className="text-sm mb-4">
+                  <ListGroup variant="flush" className="mb-2">
                     {cart.map(item => (
-                      <li key={item.id} className="mb-2">
-                        {item.name} — ${item.price.toFixed(2)} × {item.quantity}
-                        <button onClick={() => updateCartItem(item.id, 'decrease')} className="ml-2">–</button>
-                        <button onClick={() => updateCartItem(item.id, 'increase')} className="ml-1">+</button>
-                        <button onClick={() => handleRemoveCompletely(item.id)} className="ml-1 text-red-600">Remove</button>
-                      </li>
+                      <ListGroup.Item key={item.id} className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <div className="fw-semibold text-truncate" style={{ maxWidth: '150px' }}>{item.name}</div>
+                          <small>${item.price.toFixed(2)} × {item.quantity}</small>
+                        </div>
+                        <div>
+                          <Button size="sm" variant="outline-secondary" onClick={() => updateCartItem(item.id, 'decrease')} className="me-1">–</Button>
+                          <Button size="sm" variant="outline-secondary" onClick={() => updateCartItem(item.id, 'increase')} className="me-1">+</Button>
+                          <Button size="sm" variant="outline-danger" onClick={() => handleRemoveCompletely(item.id)}>✕</Button>
+                        </div>
+                      </ListGroup.Item>
                     ))}
-                  </ul>
-
-                  <button onClick={handleClearCart} className="text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded mb-2">
+                  </ListGroup>
+                  <Button variant="outline-dark" size="sm" onClick={handleClearCart} className="w-100 mb-2">
                     Clear Cart
-                  </button>
-
-                  <hr className="my-2" />
-
+                  </Button>
+                  <hr />
                   {(() => {
                     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
                     const tax = subtotal * 0.13;
                     const total = subtotal + tax;
-
                     return (
-                      <div className="text-sm">
-                        <p><strong>Subtotal:</strong> ${subtotal.toFixed(2)}</p>
-                        <p><strong>Tax (13%):</strong> ${tax.toFixed(2)}</p>
-                        <p><strong>Total:</strong> ${total.toFixed(2)}</p>
+                      <div className="text-end">
+                        <p className="mb-1"><strong>Subtotal:</strong> ${subtotal.toFixed(2)}</p>
+                        <p className="mb-1"><strong>Tax (13%):</strong> ${tax.toFixed(2)}</p>
+                        <p className="mb-0"><strong>Total:</strong> ${total.toFixed(2)}</p>
                       </div>
                     );
                   })()}
                 </>
               )}
-            </div>
-          )}
-        </div>
-      </nav>
+            </Dropdown.Menu>
+          </Dropdown>
+        </Container>
+      </Navbar>
 
       {searchTerm && searchResults.length > 0 ? (
         renderProductList("🔍 Search Results", searchResults)
@@ -231,7 +221,7 @@ function App() {
           {renderProductList("📦 All Products", sections.all)}
         </>
       )}
-    </div>
+    </Container>
   );
 }
 
