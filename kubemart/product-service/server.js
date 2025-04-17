@@ -9,7 +9,6 @@ app.get('/products', async (req, res) => {
   try {
     const response = await fetch('https://dummyjson.com/products?limit=100');
     const data = await response.json();
-
     const products = Array.isArray(data.products) ? data.products : [];
 
     const simplify = (p) => ({
@@ -19,11 +18,14 @@ app.get('/products', async (req, res) => {
       category: p.category,
       image: p.thumbnail,
       discount: p.discountPercentage,
-      stock: p.stock
+      stock: p.stock,
+      brand: p.brand,
+      description: p.description,
+      rating: p.rating
     });
 
     const bestSellers = products.filter(p => p.stock > 80).map(simplify);
-    const onSale = products.filter(p => p.discountPercentage > 5).map(simplify);
+    const onSale = products.filter(p => p.discountPercentage > 20).map(simplify);
     const all = products.map(simplify);
 
     res.json({
@@ -36,6 +38,7 @@ app.get('/products', async (req, res) => {
     res.status(500).json({ error: "Could not load products" });
   }
 });
+
 
 
 

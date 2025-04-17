@@ -63,7 +63,7 @@ function App() {
     fetch(`https://dummyjson.com/products/search?q=${value}`)
       .then(res => res.json())
       .then(data => {
-        const simplified = data.products.map(p => ({ id: p.id, name: p.title, price: p.price, category: p.category, image: p.thumbnail }));
+        const simplified = data.products.map(p => ({ id: p.id, name: p.title, price: p.price, category: p.category, image: p.thumbnail, description: p.description, brand: p.brand, rating: p.rating }));
         setSearchResults(simplified);
       })
       .catch(() => setSearchResults([]));
@@ -135,6 +135,15 @@ function App() {
     setShowModal(true);
   };
 
+  const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    const stars = [];
+    for (let i = 0; i < 5; i++) {
+      stars.push(<span key={i}>{i < fullStars ? '⭐' : '☆'}</span>);
+    }
+    return <div style={{ fontSize: '1.2rem' }}>{stars}</div>;
+  };
+
   const renderProductList = (title, items) => (
     <div className="mb-5">
       <h2 className="mb-3 d-flex justify-content-between align-items-center">
@@ -144,15 +153,18 @@ function App() {
       </h2>
       <div className="d-flex overflow-auto gap-3" ref={scrollRefs[title]}>
         {items.map((product, index) => (
-          <Card key={product.id} className={`flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'}`} style={{ width: '220px', cursor: 'pointer' }} onClick={() => handleCardClick(product)}>
-            <Card.Img variant="top" src={product.image} style={{ height: '150px', objectFit: 'contain', padding: '1rem' }} />
-            <Card.Body>
-              <Card.Title style={{ fontSize: '1rem' }}>{product.name}</Card.Title>
-              <Card.Text>
-                <small className="text-muted">{product.category}</small><br />
-                <strong>${product.price}</strong>
-              </Card.Text>
-            </Card.Body>
+          <Card key={product.id} className={`flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'}`} style={{ width: '220px' }}>
+            <div onClick={() => handleCardClick(product)} style={{ cursor: 'pointer' }}>
+              <Card.Img variant="top" src={product.image} style={{ height: '150px', objectFit: 'contain', padding: '1rem' }} />
+              <Card.Body>
+                <Card.Title style={{ fontSize: '1rem' }}>{product.name}</Card.Title>
+                <Card.Text>
+                  <small className="text-muted">{product.category}</small><br />
+                  <strong>${product.price}</strong>
+                </Card.Text>
+              </Card.Body>
+            </div>
+            <Button variant="primary" size="sm" className="m-2" onClick={() => handleAddToCart(product)}>Add to Cart</Button>
           </Card>
         ))}
       </div>
@@ -246,15 +258,29 @@ function App() {
         </>
       )}
 
-      {selectedProduct && (
+{selectedProduct && (
         <Modal show={showModal} onHide={() => setShowModal(false)} centered>
           <Modal.Header closeButton>
             <Modal.Title>{selectedProduct.name}</Modal.Title>
           </Modal.Header>
-          <Modal.Body className="text-center">
-            <img src={selectedProduct.image} alt={selectedProduct.name} style={{ maxHeight: '200px', objectFit: 'contain', marginBottom: '1rem' }} />
-            <p><strong>Category:</strong> {selectedProduct.category}</p>
-            <p><strong>Price:</strong> ${selectedProduct.price}</p>
+          <Modal.Body>
+            <Row>
+              <Col md={4} className="text-center mb-3">
+                <img src={selectedProduct.image} alt={selectedProduct.name} style={{ maxHeight: '200px', objectFit: 'contain' }} className="img-fluid" />
+              </Col>
+              <Col md={8}>
+                <p><strong>Category:</strong> {selectedProduct.category}</p>
+                <p><strong>Brand:</strong> {selectedProduct.brand || 'N/A'}</p>
+                <div className="d-flex align-items-center mb-2">
+                  <strong className="me-2">Rating:</strong>
+                  {renderStars(selectedProduct.rating)}
+                </div>
+                <p><strong>Price:</strong> ${selectedProduct.price}</p>
+              </Col>
+            </Row>
+            <hr />
+            <p><strong>Description:</strong></p>
+            <p>{selectedProduct.description}</p>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
