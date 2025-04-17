@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Container, Navbar, Form, FormControl, Button, Dropdown, ListGroup, Badge, Row, Col, Card, FormSelect } from 'react-bootstrap';
+import { Container, Navbar, Form, FormControl, Button, Dropdown, ListGroup, Badge, Row, Col, Card, FormSelect, Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -12,6 +12,8 @@ function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [availableCategories, setAvailableCategories] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const dropdownRef = useRef();
 
@@ -128,6 +130,11 @@ function App() {
     }
   };
 
+  const handleCardClick = (product) => {
+    setSelectedProduct(product);
+    setShowModal(true);
+  };
+
   const renderProductList = (title, items) => (
     <div className="mb-5">
       <h2 className="mb-3 d-flex justify-content-between align-items-center">
@@ -137,7 +144,7 @@ function App() {
       </h2>
       <div className="d-flex overflow-auto gap-3" ref={scrollRefs[title]}>
         {items.map((product, index) => (
-          <Card key={product.id} className={`flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'}`} style={{ width: '220px' }}>
+          <Card key={product.id} className={`flex-shrink-0 ${index % 2 === 0 ? 'bg-light' : 'bg-white'}`} style={{ width: '220px', cursor: 'pointer' }} onClick={() => handleCardClick(product)}>
             <Card.Img variant="top" src={product.image} style={{ height: '150px', objectFit: 'contain', padding: '1rem' }} />
             <Card.Body>
               <Card.Title style={{ fontSize: '1rem' }}>{product.name}</Card.Title>
@@ -145,9 +152,6 @@ function App() {
                 <small className="text-muted">{product.category}</small><br />
                 <strong>${product.price}</strong>
               </Card.Text>
-              <Button variant="primary" size="sm" onClick={() => handleAddToCart(product)}>
-                Add to Cart
-              </Button>
             </Card.Body>
           </Card>
         ))}
@@ -240,6 +244,23 @@ function App() {
             {renderProductList("🗂 Browse by Category", filteredProducts)}
           </div>
         </>
+      )}
+
+      {selectedProduct && (
+        <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>{selectedProduct.name}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="text-center">
+            <img src={selectedProduct.image} alt={selectedProduct.name} style={{ maxHeight: '200px', objectFit: 'contain', marginBottom: '1rem' }} />
+            <p><strong>Category:</strong> {selectedProduct.category}</p>
+            <p><strong>Price:</strong> ${selectedProduct.price}</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+            <Button variant="primary" onClick={() => { handleAddToCart(selectedProduct); setShowModal(false); }}>Add to Cart</Button>
+          </Modal.Footer>
+        </Modal>
       )}
     </Container>
   );
